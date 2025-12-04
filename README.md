@@ -1,5 +1,5 @@
-# CS370FinalProject - Flight Delay risk prediction app 
-An app where users can enter their flight number and receive predictions on possible delays hours in advance as opposed to airports/airlines' last minute report on delays that you may not expect. There will be an option to see a detailed review of the causes of the delay and our confidence level for this data. 
+# CS370FinalProject - Flight trip prediction app 
+An app where users can enter their flight number to be able to help plan out your trip using prediction tools to send you reminders on how you save time on your route and get to the airport in time for your flight depending on your location for optimzation purposes.   
 # Team members 
 - Han Zheng
 - Rayan Nibir
