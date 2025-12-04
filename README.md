@@ -4,5 +4,5 @@ A web app that helps travelers make smarter decisions about when to leave for th
 - Han Zheng
 - Rayan Nibir
 - Vinesh Supersaud
-- Tahmid Hussain
+- Tahmid Hussan
 # Project Overview
