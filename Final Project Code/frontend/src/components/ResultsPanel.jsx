@@ -1,4 +1,16 @@
-function ResultsPanel({ onClose }) {
+function ResultsPanel({ status, result, errorMessage, onClose }) {
+  const formatDateTime = (isoString) => {
+    const date = new Date(isoString)
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
+  }
+
   return (
     <>
       {/* Backdrop overlay */}
@@ -24,12 +36,64 @@ function ResultsPanel({ onClose }) {
             </button>
           </div>
           
-          {/* Content */}
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">
-              Enter trip details to calculate your departure time.
-            </p>
-          </div>
+          {/* Content based on status */}
+          {status === 'idle' && (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">
+                Enter trip details to calculate your departure time.
+              </p>
+            </div>
+          )}
+
+          {status === 'loading' && (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">Calculating departure time...</p>
+            </div>
+          )}
+
+          {status === 'error' && (
+            <div className="text-center py-12">
+              <p className="text-red-600 text-lg font-semibold mb-2">Error</p>
+              <p className="text-gray-600">{errorMessage || 'An error occurred while calculating departure time.'}</p>
+            </div>
+          )}
+
+          {status === 'success' && result && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-1">Recommended Departure Time</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {formatDateTime(result.recommendedLeaveDateTime)}
+                </p>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Breakdown</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Base travel time:</span>
+                    <span className="font-medium">{result.breakdown.baseTravelMinutes} minutes</span>
+                  </div>
+                  {result.breakdown.cabBufferMinutes > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Cab pickup buffer:</span>
+                      <span className="font-medium">{result.breakdown.cabBufferMinutes} minutes</span>
+                    </div>
+                  )}
+                  {result.breakdown.weatherExtraMinutes > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Weather adjustment:</span>
+                      <span className="font-medium">{result.breakdown.weatherExtraMinutes} minutes</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between border-t pt-2 mt-2">
+                    <span className="font-semibold text-gray-800">Total:</span>
+                    <span className="font-bold text-gray-900">{result.breakdown.totalMinutes} minutes</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>

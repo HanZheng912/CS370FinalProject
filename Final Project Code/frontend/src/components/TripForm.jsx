@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { validateTripForm } from '../utils/validation'
 import { getPlaceSuggestions } from '../api/places'
 
-function TripForm({ onSubmit }) {
+function TripForm({ onCalculate }) {
   const [fromAddress, setFromAddress] = useState('')
   const [airport, setAirport] = useState('')
   const [arrivalDate, setArrivalDate] = useState('')
@@ -39,8 +39,39 @@ function TripForm({ onSubmit }) {
     }
 
     setErrors({})
-    if (onSubmit) {
-      onSubmit()
+    
+    // Convert date format from YYYY-MM-DD to MM-DD-YYYY
+    const convertDateToMMDDYYYY = (dateString) => {
+      const [year, month, day] = dateString.split('-')
+      return `${month}-${day}-${year}`
+    }
+
+    // Map weather condition from form value to API format
+    const mapWeatherCondition = (value) => {
+      const weatherMap = {
+        'clear': 'Clear',
+        'light-rain': 'Light rain',
+        'heavy-rain': 'Heavy rain',
+        'snow-ice': 'Snow or ice',
+        'severe': 'Severe weather'
+      }
+      return weatherMap[value] || value
+    }
+
+    // Prepare form values for API call
+    const apiFormValues = {
+      fromAddress,
+      selectedPlaceId: selectedPlace?.id || null,
+      airport,
+      arrivalDate: convertDateToMMDDYYYY(arrivalDate),
+      arrivalTime,
+      transportMode,
+      cabBuffer,
+      weatherCondition: mapWeatherCondition(weatherCondition)
+    }
+
+    if (onCalculate) {
+      onCalculate(apiFormValues)
     }
   }
 
