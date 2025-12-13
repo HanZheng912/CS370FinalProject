@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { validateTripForm } from '../utils/validation'
+import { getPlaceSuggestions } from '../api/places'
 
 function TripForm({ onSubmit }) {
   const [fromAddress, setFromAddress] = useState('')
@@ -10,6 +11,11 @@ function TripForm({ onSubmit }) {
   const [cabBuffer, setCabBuffer] = useState('10')
   const [weatherCondition, setWeatherCondition] = useState('')
   const [errors, setErrors] = useState({})
+  const [addressSuggestions, setAddressSuggestions] = useState([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
+  const addressInputRef = useRef(null)
+  const suggestionsRef = useRef(null)
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -51,29 +57,149 @@ function TripForm({ onSubmit }) {
     return isValid
   }
 
+  // Fetch address suggestions as user types
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (fromAddress.trim().length < 3) {
+        setAddressSuggestions([])
+        setShowSuggestions(false)
+        setIsLoadingSuggestions(false)
+        return
+      }
+
+      setIsLoadingSuggestions(true)
+      setShowSuggestions(false) // Hide while loading
+      try {
+        const suggestions = await getPlaceSuggestions(fromAddress)
+        setAddressSuggestions(suggestions)
+        // Only show if we have suggestions, input still has 3+ chars, and input is focused
+        if (suggestions.length > 0 && fromAddress.trim().length >= 3) {
+          // Check if address input is still focused before showing
+          if (addressInputRef.current === document.activeElement) {
+            setShowSuggestions(true)
+          }
+        } else {
+          setShowSuggestions(false)
+        }
+      } catch (error) {
+        setAddressSuggestions([])
+        setShowSuggestions(false)
+      } finally {
+        setIsLoadingSuggestions(false)
+      }
+    }
+
+    const timeoutId = setTimeout(fetchSuggestions, 400) // Debounce 400ms
+    return () => clearTimeout(timeoutId)
+  }, [fromAddress])
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    if (!showSuggestions) return
+
+    const handleClickOutside = (event) => {
+      // Check if click is on the address input
+      const isClickOnInput = addressInputRef.current && 
+        (addressInputRef.current === event.target || addressInputRef.current.contains(event.target))
+      
+      // Check if click is on the suggestions dropdown
+      const isClickOnSuggestions = suggestionsRef.current && 
+        suggestionsRef.current.contains(event.target)
+      
+      // If click is neither on input nor suggestions, close the dropdown
+      if (!isClickOnInput && !isClickOnSuggestions) {
+        setShowSuggestions(false)
+      }
+    }
+
+    // Use a slight delay to avoid conflicts with other click handlers
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside)
+    }, 0)
+
+    return () => {
+      clearTimeout(timeoutId)
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showSuggestions])
+
+  const handleAddressChange = (e) => {
+    setFromAddress(e.target.value)
+    // Don't show suggestions immediately - let useEffect handle it after debounce
+  }
+
+  const handleSuggestionSelect = (suggestion) => {
+    setFromAddress(suggestion.label)
+    setShowSuggestions(false)
+    setAddressSuggestions([])
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
       <h2 className="text-2xl font-semibold text-gray-800 mb-6">Trip Details</h2>
       
       <form className="space-y-6" onSubmit={handleSubmit}>
         {/* From address */}
-        <div>
+        <div className="relative">
           <label htmlFor="fromAddress" className="block text-sm font-medium text-gray-700 mb-2">
             From address
           </label>
           <input
+            ref={addressInputRef}
             type="text"
             id="fromAddress"
             name="fromAddress"
             value={fromAddress}
-            onChange={(e) => setFromAddress(e.target.value)}
+            onChange={handleAddressChange}
+            onFocus={(e) => {
+              // Only show suggestions on focus if we already have them, input is valid, and user is actually focusing the input
+              if (addressSuggestions.length > 0 && fromAddress.trim().length >= 3 && e.target === addressInputRef.current) {
+                setShowSuggestions(true)
+              }
+            }}
+            onBlur={(e) => {
+              // Don't close on blur if clicking on suggestions (handled by click-outside)
+              // Only close if focus is moving to something that's not the suggestions
+              if (suggestionsRef.current && !suggestionsRef.current.contains(e.relatedTarget)) {
+                // Small delay to allow click events on suggestions to fire first
+                setTimeout(() => {
+                  if (document.activeElement !== addressInputRef.current) {
+                    setShowSuggestions(false)
+                  }
+                }, 200)
+              }
+            }}
             placeholder="Enter your starting address"
             className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               errors.fromAddress ? 'border-red-500' : 'border-gray-300'
             }`}
+            autoComplete="off"
           />
           {errors.fromAddress && (
             <p className="mt-1 text-sm text-red-600">{errors.fromAddress}</p>
+          )}
+          
+          {/* Address suggestions dropdown */}
+          {showSuggestions && (addressSuggestions.length > 0 || isLoadingSuggestions) && (
+            <div
+              ref={suggestionsRef}
+              className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
+            >
+              {isLoadingSuggestions ? (
+                <div className="px-4 py-2 text-sm text-gray-500">Loading suggestions...</div>
+              ) : (
+                addressSuggestions.map((suggestion) => (
+                  <button
+                    key={suggestion.id}
+                    type="button"
+                    onClick={() => handleSuggestionSelect(suggestion)}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none"
+                  >
+                    {suggestion.label}
+                  </button>
+                ))
+              )}
+            </div>
           )}
         </div>
 
