@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { validateTripForm } from '../utils/validation'
 
 function TripForm({ onSubmit }) {
   const [fromAddress, setFromAddress] = useState('')
@@ -8,12 +9,46 @@ function TripForm({ onSubmit }) {
   const [transportMode, setTransportMode] = useState('')
   const [cabBuffer, setCabBuffer] = useState('10')
   const [weatherCondition, setWeatherCondition] = useState('')
+  const [errors, setErrors] = useState({})
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    
+    const formValues = {
+      fromAddress,
+      airport,
+      arrivalDate,
+      arrivalTime,
+      transportMode,
+      cabBuffer,
+      weatherCondition
+    }
+
+    const { isValid, errors: validationErrors } = validateTripForm(formValues)
+    
+    if (!isValid) {
+      setErrors(validationErrors)
+      return
+    }
+
+    setErrors({})
     if (onSubmit) {
       onSubmit()
     }
+  }
+
+  const isFormValid = () => {
+    const formValues = {
+      fromAddress,
+      airport,
+      arrivalDate,
+      arrivalTime,
+      transportMode,
+      cabBuffer,
+      weatherCondition
+    }
+    const { isValid } = validateTripForm(formValues)
+    return isValid
   }
 
   return (
@@ -33,8 +68,13 @@ function TripForm({ onSubmit }) {
             value={fromAddress}
             onChange={(e) => setFromAddress(e.target.value)}
             placeholder="Enter your starting address"
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              errors.fromAddress ? 'border-red-500' : 'border-gray-300'
+            }`}
           />
+          {errors.fromAddress && (
+            <p className="mt-1 text-sm text-red-600">{errors.fromAddress}</p>
+          )}
         </div>
 
         {/* Airport */}
@@ -47,13 +87,18 @@ function TripForm({ onSubmit }) {
             name="airport"
             value={airport}
             onChange={(e) => setAirport(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              errors.airport ? 'border-red-500' : 'border-gray-300'
+            }`}
           >
             <option value="">Select an airport</option>
             <option value="JFK">JFK</option>
             <option value="LGA">LGA</option>
             <option value="EWR">EWR</option>
           </select>
+          {errors.airport && (
+            <p className="mt-1 text-sm text-red-600">{errors.airport}</p>
+          )}
         </div>
 
         {/* Desired arrival date */}
@@ -67,8 +112,13 @@ function TripForm({ onSubmit }) {
             name="arrivalDate"
             value={arrivalDate}
             onChange={(e) => setArrivalDate(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              errors.arrivalDate ? 'border-red-500' : 'border-gray-300'
+            }`}
           />
+          {errors.arrivalDate && (
+            <p className="mt-1 text-sm text-red-600">{errors.arrivalDate}</p>
+          )}
         </div>
 
         {/* Desired arrival time */}
@@ -82,8 +132,13 @@ function TripForm({ onSubmit }) {
             name="arrivalTime"
             value={arrivalTime}
             onChange={(e) => setArrivalTime(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              errors.arrivalTime ? 'border-red-500' : 'border-gray-300'
+            }`}
           />
+          {errors.arrivalTime && (
+            <p className="mt-1 text-sm text-red-600">{errors.arrivalTime}</p>
+          )}
         </div>
 
         {/* Transportation */}
@@ -121,6 +176,9 @@ function TripForm({ onSubmit }) {
               </label>
             </div>
           </div>
+          {errors.transportMode && (
+            <p className="mt-1 text-sm text-red-600">{errors.transportMode}</p>
+          )}
 
           {/* Cab pickup buffer - shown when cab selected */}
           {transportMode === 'cab' && (
@@ -137,10 +195,15 @@ function TripForm({ onSubmit }) {
                 step="1"
                 value={cabBuffer}
                 onChange={(e) => setCabBuffer(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.cabBuffer ? 'border-red-500' : 'border-gray-300'
+                }`}
               />
+              {errors.cabBuffer && (
+                <p className="mt-1 text-sm text-red-600">{errors.cabBuffer}</p>
+              )}
               <p className="mt-2 text-xs text-gray-500 italic">
-                Please select how long it usually takes for a cab to arrive in your area.
+                Please enter how long it usually takes for a cab to arrive in your area.
               </p>
             </div>
           )}
@@ -156,7 +219,9 @@ function TripForm({ onSubmit }) {
             name="weather"
             value={weatherCondition}
             onChange={(e) => setWeatherCondition(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              errors.weatherCondition ? 'border-red-500' : 'border-gray-300'
+            }`}
           >
             <option value="">Select weather condition</option>
             <option value="clear">Clear</option>
@@ -165,6 +230,9 @@ function TripForm({ onSubmit }) {
             <option value="snow-ice">Snow or ice</option>
             <option value="severe">Severe weather</option>
           </select>
+          {errors.weatherCondition && (
+            <p className="mt-1 text-sm text-red-600">{errors.weatherCondition}</p>
+          )}
         </div>
 
         {/* Submit button */}
