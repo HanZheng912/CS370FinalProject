@@ -12,8 +12,9 @@ function TripForm({ onSubmit }) {
   const [weatherCondition, setWeatherCondition] = useState('')
   const [errors, setErrors] = useState({})
   const [addressSuggestions, setAddressSuggestions] = useState([])
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false)
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false)
+  const [selectedPlace, setSelectedPlace] = useState(null)
   const addressInputRef = useRef(null)
   const suggestionsRef = useRef(null)
 
@@ -59,43 +60,43 @@ function TripForm({ onSubmit }) {
 
   // Fetch address suggestions as user types
   useEffect(() => {
+    // Clear selectedPlace when fromAddress changes
+    setSelectedPlace(null)
+    
+    // Open dropdown when user types
+    if (fromAddress.trim().length >= 3) {
+      setIsSuggestionsOpen(true)
+    }
+
     const fetchSuggestions = async () => {
       if (fromAddress.trim().length < 3) {
         setAddressSuggestions([])
-        setShowSuggestions(false)
-        setIsLoadingSuggestions(false)
+        setIsSuggestionsOpen(false)
+        setIsSuggestionsLoading(false)
         return
       }
 
-      setIsLoadingSuggestions(true)
-      setShowSuggestions(false) // Hide while loading
+      setIsSuggestionsLoading(true)
       try {
         const suggestions = await getPlaceSuggestions(fromAddress)
         setAddressSuggestions(suggestions)
-        // Only show if we have suggestions, input still has 3+ chars, and input is focused
-        if (suggestions.length > 0 && fromAddress.trim().length >= 3) {
-          // Check if address input is still focused before showing
-          if (addressInputRef.current === document.activeElement) {
-            setShowSuggestions(true)
-          }
-        } else {
-          setShowSuggestions(false)
-        }
+        // Keep dropdown open to show results or "No results" message
+        setIsSuggestionsOpen(true)
       } catch (error) {
         setAddressSuggestions([])
-        setShowSuggestions(false)
+        setIsSuggestionsOpen(false)
       } finally {
-        setIsLoadingSuggestions(false)
+        setIsSuggestionsLoading(false)
       }
     }
 
-    const timeoutId = setTimeout(fetchSuggestions, 400) // Debounce 400ms
+    const timeoutId = setTimeout(fetchSuggestions, 300) // Debounce 300ms
     return () => clearTimeout(timeoutId)
   }, [fromAddress])
 
   // Close suggestions when clicking outside
   useEffect(() => {
-    if (!showSuggestions) return
+    if (!isSuggestionsOpen) return
 
     const handleClickOutside = (event) => {
       // Check if click is on the address input
@@ -108,7 +109,7 @@ function TripForm({ onSubmit }) {
       
       // If click is neither on input nor suggestions, close the dropdown
       if (!isClickOnInput && !isClickOnSuggestions) {
-        setShowSuggestions(false)
+        setIsSuggestionsOpen(false)
       }
     }
 
@@ -121,16 +122,29 @@ function TripForm({ onSubmit }) {
       clearTimeout(timeoutId)
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showSuggestions])
+  }, [isSuggestionsOpen])
+
+  // Close dropdown on Escape key
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === 'Escape' && isSuggestionsOpen) {
+        setIsSuggestionsOpen(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [isSuggestionsOpen])
 
   const handleAddressChange = (e) => {
     setFromAddress(e.target.value)
-    // Don't show suggestions immediately - let useEffect handle it after debounce
+    // useEffect will handle clearing selectedPlace and opening dropdown
   }
 
   const handleSuggestionSelect = (suggestion) => {
+    setSelectedPlace(suggestion)
     setFromAddress(suggestion.label)
-    setShowSuggestions(false)
+    setIsSuggestionsOpen(false)
     setAddressSuggestions([])
   }
 
@@ -151,22 +165,10 @@ function TripForm({ onSubmit }) {
             name="fromAddress"
             value={fromAddress}
             onChange={handleAddressChange}
-            onFocus={(e) => {
-              // Only show suggestions on focus if we already have them, input is valid, and user is actually focusing the input
-              if (addressSuggestions.length > 0 && fromAddress.trim().length >= 3 && e.target === addressInputRef.current) {
-                setShowSuggestions(true)
-              }
-            }}
-            onBlur={(e) => {
-              // Don't close on blur if clicking on suggestions (handled by click-outside)
-              // Only close if focus is moving to something that's not the suggestions
-              if (suggestionsRef.current && !suggestionsRef.current.contains(e.relatedTarget)) {
-                // Small delay to allow click events on suggestions to fire first
-                setTimeout(() => {
-                  if (document.activeElement !== addressInputRef.current) {
-                    setShowSuggestions(false)
-                  }
-                }, 200)
+            onFocus={() => {
+              // Open dropdown on focus if input has 3+ characters
+              if (fromAddress.trim().length >= 3) {
+                setIsSuggestionsOpen(true)
               }
             }}
             placeholder="Enter your starting address"
@@ -180,14 +182,14 @@ function TripForm({ onSubmit }) {
           )}
           
           {/* Address suggestions dropdown */}
-          {showSuggestions && (addressSuggestions.length > 0 || isLoadingSuggestions) && (
+          {isSuggestionsOpen && fromAddress.trim().length >= 3 && (
             <div
               ref={suggestionsRef}
               className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
             >
-              {isLoadingSuggestions ? (
+              {isSuggestionsLoading ? (
                 <div className="px-4 py-2 text-sm text-gray-500">Loading suggestions...</div>
-              ) : (
+              ) : addressSuggestions.length > 0 ? (
                 addressSuggestions.map((suggestion) => (
                   <button
                     key={suggestion.id}
@@ -198,6 +200,8 @@ function TripForm({ onSubmit }) {
                     {suggestion.label}
                   </button>
                 ))
+              ) : (
+                <div className="px-4 py-2 text-sm text-gray-500">No results</div>
               )}
             </div>
           )}
