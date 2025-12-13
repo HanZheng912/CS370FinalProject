@@ -1,7 +1,13 @@
 import { useState } from 'react'
 
 function TripForm({ onSubmit }) {
-  const [transportation, setTransportation] = useState('')
+  const [fromAddress, setFromAddress] = useState('')
+  const [airport, setAirport] = useState('')
+  const [arrivalDate, setArrivalDate] = useState('')
+  const [arrivalTime, setArrivalTime] = useState('')
+  const [transportMode, setTransportMode] = useState('')
+  const [cabBuffer, setCabBuffer] = useState('10')
+  const [weatherCondition, setWeatherCondition] = useState('')
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -24,6 +30,8 @@ function TripForm({ onSubmit }) {
             type="text"
             id="fromAddress"
             name="fromAddress"
+            value={fromAddress}
+            onChange={(e) => setFromAddress(e.target.value)}
             placeholder="Enter your starting address"
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
@@ -37,6 +45,8 @@ function TripForm({ onSubmit }) {
           <select
             id="airport"
             name="airport"
+            value={airport}
+            onChange={(e) => setAirport(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">Select an airport</option>
@@ -55,6 +65,8 @@ function TripForm({ onSubmit }) {
             type="date"
             id="arrivalDate"
             name="arrivalDate"
+            value={arrivalDate}
+            onChange={(e) => setArrivalDate(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
@@ -68,6 +80,8 @@ function TripForm({ onSubmit }) {
             type="time"
             id="arrivalTime"
             name="arrivalTime"
+            value={arrivalTime}
+            onChange={(e) => setArrivalTime(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
@@ -84,8 +98,8 @@ function TripForm({ onSubmit }) {
                 id="transportDrive"
                 name="transportation"
                 value="drive"
-                checked={transportation === 'drive'}
-                onChange={(e) => setTransportation(e.target.value)}
+                checked={transportMode === 'drive'}
+                onChange={(e) => setTransportMode(e.target.value)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
               />
               <label htmlFor="transportDrive" className="ml-2 text-sm text-gray-700">
@@ -98,8 +112,8 @@ function TripForm({ onSubmit }) {
                 id="transportCab"
                 name="transportation"
                 value="cab"
-                checked={transportation === 'cab'}
-                onChange={(e) => setTransportation(e.target.value)}
+                checked={transportMode === 'cab'}
+                onChange={(e) => setTransportMode(e.target.value)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
               />
               <label htmlFor="transportCab" className="ml-2 text-sm text-gray-700">
@@ -109,7 +123,7 @@ function TripForm({ onSubmit }) {
           </div>
 
           {/* Cab pickup buffer - shown when cab selected */}
-          {transportation === 'cab' && (
+          {transportMode === 'cab' && (
             <div className="mt-4 ml-6">
               <label htmlFor="cabBuffer" className="block text-sm font-medium text-gray-700 mb-2">
                 Cab pickup buffer (minutes)
@@ -121,7 +135,8 @@ function TripForm({ onSubmit }) {
                 min="1"
                 max="60"
                 step="1"
-                defaultValue="10"
+                value={cabBuffer}
+                onChange={(e) => setCabBuffer(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <p className="mt-2 text-xs text-gray-500 italic">
@@ -139,6 +154,8 @@ function TripForm({ onSubmit }) {
           <select
             id="weather"
             name="weather"
+            value={weatherCondition}
+            onChange={(e) => setWeatherCondition(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">Select weather condition</option>
