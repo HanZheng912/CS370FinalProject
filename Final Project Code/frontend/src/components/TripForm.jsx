@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { validateTripForm } from '../utils/validation'
 import { getPlaceSuggestions } from '../api/places'
 
-function TripForm({ onCalculate }) {
+function TripForm({ onCalculate, isLoading = false, onResetFields }) {
   const [fromAddress, setFromAddress] = useState('')
   const [airport, setAirport] = useState('')
   const [arrivalDate, setArrivalDate] = useState('')
@@ -18,8 +18,29 @@ function TripForm({ onCalculate }) {
   const addressInputRef = useRef(null)
   const suggestionsRef = useRef(null)
 
+  // Reset form fields except fromAddress and airport when onResetFields changes
+  useEffect(() => {
+    if (onResetFields) {
+      // Preserve fromAddress and airport, reset everything else
+      setArrivalDate('')
+      setArrivalTime('')
+      setTransportMode('')
+      setCabBuffer('10')
+      setWeatherCondition('')
+      setErrors({})
+      setSelectedPlace(null)
+      setAddressSuggestions([])
+      setIsSuggestionsOpen(false)
+    }
+  }, [onResetFields])
+
   const handleSubmit = (e) => {
     e.preventDefault()
+    
+    // Prevent double submit - if already loading, do nothing
+    if (isLoading) {
+      return
+    }
     
     const formValues = {
       fromAddress,
@@ -400,9 +421,14 @@ function TripForm({ onCalculate }) {
         <div className="pt-4">
           <button
             type="submit"
-            className="w-full md:w-auto px-8 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+            disabled={isLoading}
+            className={`w-full md:w-auto px-8 py-3 text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors ${
+              isLoading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
-            Calculate time to leave
+            {isLoading ? 'Calculating…' : 'Calculate time to leave'}
           </button>
         </div>
       </form>
