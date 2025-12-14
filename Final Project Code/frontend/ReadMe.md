@@ -135,3 +135,4 @@ This frontend module was implemented as part of the team project to handle:
 
 Backend services are implemented separately.
 
+The frontend was fully created and worked on by: Tahmid Hussan
