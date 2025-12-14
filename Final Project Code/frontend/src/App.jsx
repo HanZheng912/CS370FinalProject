@@ -67,6 +67,16 @@ function App() {
 
   return (
     <Layout>
+      {/* Hero Section */}
+      <div className="text-center mb-8 md:mb-12">
+        <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
+          Airport Departure Planner
+        </h2>
+        <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto drop-shadow-md">
+          Calculate when to leave using your arrival target, transportation, and weather.
+        </p>
+      </div>
+
       <TripForm 
         onCalculate={handleCalculate} 
         isLoading={status === 'loading'}

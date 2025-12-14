@@ -201,13 +201,13 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 md:p-8">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-6">Trip Details</h2>
+    <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-6 md:p-8 border border-white/20">
+      <h2 className="text-2xl font-semibold text-white mb-6 drop-shadow-md text-center">Trip Details</h2>
       
       <form className="space-y-6" onSubmit={handleSubmit}>
         {/* From address */}
         <div className="relative">
-          <label htmlFor="fromAddress" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="fromAddress" className="block text-sm font-medium text-white/90 mb-2 drop-shadow-sm">
             From address
           </label>
           <input
@@ -224,36 +224,36 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
               }
             }}
             placeholder="Enter your starting address"
-            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              errors.fromAddress ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-4 py-2.5 bg-white/20 backdrop-blur-sm border rounded-lg text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all ${
+              errors.fromAddress ? 'border-red-400' : 'border-white/30'
             }`}
             autoComplete="off"
           />
           {errors.fromAddress && (
-            <p className="mt-1 text-sm text-red-600">{errors.fromAddress}</p>
+            <p className="mt-1 text-sm text-red-300 drop-shadow-sm">{errors.fromAddress}</p>
           )}
           
           {/* Address suggestions dropdown */}
           {isSuggestionsOpen && fromAddress.trim().length >= 3 && (
             <div
               ref={suggestionsRef}
-              className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
+              className="absolute z-50 w-full mt-1 bg-white/95 backdrop-blur-md border border-white/30 rounded-lg shadow-2xl max-h-60 overflow-auto"
             >
               {isSuggestionsLoading ? (
-                <div className="px-4 py-2 text-sm text-gray-500">Loading suggestions...</div>
+                <div className="px-4 py-2 text-sm text-gray-700">Loading suggestions...</div>
               ) : addressSuggestions.length > 0 ? (
                 addressSuggestions.map((suggestion) => (
                   <button
                     key={suggestion.id}
                     type="button"
                     onClick={() => handleSuggestionSelect(suggestion)}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none"
+                    className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-blue-100 focus:bg-blue-100 focus:outline-none transition-colors"
                   >
                     {suggestion.label}
                   </button>
                 ))
               ) : (
-                <div className="px-4 py-2 text-sm text-gray-500">No results</div>
+                <div className="px-4 py-2 text-sm text-gray-600">No results</div>
               )}
             </div>
           )}
@@ -261,7 +261,7 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
 
         {/* Airport */}
         <div>
-          <label htmlFor="airport" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="airport" className="block text-sm font-medium text-white/90 mb-2 drop-shadow-sm">
             Airport
           </label>
           <select
@@ -269,23 +269,23 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
             name="airport"
             value={airport}
             onChange={(e) => setAirport(e.target.value)}
-            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              errors.airport ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-4 py-2.5 bg-white/20 backdrop-blur-sm border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all ${
+              errors.airport ? 'border-red-400' : 'border-white/30'
             }`}
           >
-            <option value="">Select an airport</option>
-            <option value="JFK">JFK</option>
-            <option value="LGA">LGA</option>
-            <option value="EWR">EWR</option>
+            <option value="" className="bg-gray-800 text-white">Select an airport</option>
+            <option value="JFK" className="bg-gray-800 text-white">JFK</option>
+            <option value="LGA" className="bg-gray-800 text-white">LGA</option>
+            <option value="EWR" className="bg-gray-800 text-white">EWR</option>
           </select>
           {errors.airport && (
-            <p className="mt-1 text-sm text-red-600">{errors.airport}</p>
+            <p className="mt-1 text-sm text-red-300 drop-shadow-sm">{errors.airport}</p>
           )}
         </div>
 
         {/* Desired arrival date */}
         <div>
-          <label htmlFor="arrivalDate" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="arrivalDate" className="block text-sm font-medium text-white/90 mb-2 drop-shadow-sm">
             Desired arrival date
           </label>
           <input
@@ -294,18 +294,18 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
             name="arrivalDate"
             value={arrivalDate}
             onChange={(e) => setArrivalDate(e.target.value)}
-            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              errors.arrivalDate ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-4 py-2.5 bg-white/20 backdrop-blur-sm border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all ${
+              errors.arrivalDate ? 'border-red-400' : 'border-white/30'
             }`}
           />
           {errors.arrivalDate && (
-            <p className="mt-1 text-sm text-red-600">{errors.arrivalDate}</p>
+            <p className="mt-1 text-sm text-red-300 drop-shadow-sm">{errors.arrivalDate}</p>
           )}
         </div>
 
         {/* Desired arrival time */}
         <div>
-          <label htmlFor="arrivalTime" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="arrivalTime" className="block text-sm font-medium text-white/90 mb-2 drop-shadow-sm">
             Desired arrival time
           </label>
           <input
@@ -314,18 +314,18 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
             name="arrivalTime"
             value={arrivalTime}
             onChange={(e) => setArrivalTime(e.target.value)}
-            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              errors.arrivalTime ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-4 py-2.5 bg-white/20 backdrop-blur-sm border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all ${
+              errors.arrivalTime ? 'border-red-400' : 'border-white/30'
             }`}
           />
           {errors.arrivalTime && (
-            <p className="mt-1 text-sm text-red-600">{errors.arrivalTime}</p>
+            <p className="mt-1 text-sm text-red-300 drop-shadow-sm">{errors.arrivalTime}</p>
           )}
         </div>
 
         {/* Transportation */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-white/90 mb-2 drop-shadow-sm">
             Transportation
           </label>
           <div className="space-y-2">
@@ -337,9 +337,9 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
                 value="drive"
                 checked={transportMode === 'drive'}
                 onChange={(e) => setTransportMode(e.target.value)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                className="h-4 w-4 text-blue-400 focus:ring-blue-400 border-white/30 bg-white/10"
               />
-              <label htmlFor="transportDrive" className="ml-2 text-sm text-gray-700">
+              <label htmlFor="transportDrive" className="ml-2 text-sm text-white/90 drop-shadow-sm">
                 I am driving myself
               </label>
             </div>
@@ -351,21 +351,21 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
                 value="cab"
                 checked={transportMode === 'cab'}
                 onChange={(e) => setTransportMode(e.target.value)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                className="h-4 w-4 text-blue-400 focus:ring-blue-400 border-white/30 bg-white/10"
               />
-              <label htmlFor="transportCab" className="ml-2 text-sm text-gray-700">
+              <label htmlFor="transportCab" className="ml-2 text-sm text-white/90 drop-shadow-sm">
                 I am taking a cab or rideshare
               </label>
             </div>
           </div>
           {errors.transportMode && (
-            <p className="mt-1 text-sm text-red-600">{errors.transportMode}</p>
+            <p className="mt-1 text-sm text-red-300 drop-shadow-sm">{errors.transportMode}</p>
           )}
 
           {/* Cab pickup buffer - shown when cab selected */}
           {transportMode === 'cab' && (
             <div className="mt-4 ml-6">
-              <label htmlFor="cabBuffer" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="cabBuffer" className="block text-sm font-medium text-white/90 mb-2 drop-shadow-sm">
                 Cab pickup buffer (minutes)
               </label>
               <input
@@ -377,14 +377,14 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
                 step="1"
                 value={cabBuffer}
                 onChange={(e) => setCabBuffer(e.target.value)}
-                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.cabBuffer ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-4 py-2.5 bg-white/20 backdrop-blur-sm border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all ${
+                  errors.cabBuffer ? 'border-red-400' : 'border-white/30'
                 }`}
               />
               {errors.cabBuffer && (
-                <p className="mt-1 text-sm text-red-600">{errors.cabBuffer}</p>
+                <p className="mt-1 text-sm text-red-300 drop-shadow-sm">{errors.cabBuffer}</p>
               )}
-              <p className="mt-2 text-xs text-gray-500 italic">
+              <p className="mt-2 text-xs text-white/70 italic drop-shadow-sm">
                 Please enter how long it usually takes for a cab to arrive in your area.
               </p>
             </div>
@@ -393,7 +393,7 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
 
         {/* Weather condition */}
         <div>
-          <label htmlFor="weather" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="weather" className="block text-sm font-medium text-white/90 mb-2 drop-shadow-sm">
             Weather condition
           </label>
           <select
@@ -401,31 +401,31 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
             name="weather"
             value={weatherCondition}
             onChange={(e) => setWeatherCondition(e.target.value)}
-            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              errors.weatherCondition ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-4 py-2.5 bg-white/20 backdrop-blur-sm border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all ${
+              errors.weatherCondition ? 'border-red-400' : 'border-white/30'
             }`}
           >
-            <option value="">Select weather condition</option>
-            <option value="clear">Clear</option>
-            <option value="light-rain">Light rain</option>
-            <option value="heavy-rain">Heavy rain</option>
-            <option value="snow-ice">Snow or ice</option>
-            <option value="severe">Severe weather</option>
+            <option value="" className="bg-gray-800 text-white">Select weather condition</option>
+            <option value="clear" className="bg-gray-800 text-white">Clear</option>
+            <option value="light-rain" className="bg-gray-800 text-white">Light rain</option>
+            <option value="heavy-rain" className="bg-gray-800 text-white">Heavy rain</option>
+            <option value="snow-ice" className="bg-gray-800 text-white">Snow or ice</option>
+            <option value="severe" className="bg-gray-800 text-white">Severe weather</option>
           </select>
           {errors.weatherCondition && (
-            <p className="mt-1 text-sm text-red-600">{errors.weatherCondition}</p>
+            <p className="mt-1 text-sm text-red-300 drop-shadow-sm">{errors.weatherCondition}</p>
           )}
         </div>
 
         {/* Submit button */}
-        <div className="pt-4">
+        <div className="pt-4 flex justify-center">
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full md:w-auto px-8 py-3 text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors ${
+            className={`w-full md:w-auto px-8 py-3 text-white font-semibold rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all shadow-lg ${
               isLoading
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700'
+                ? 'bg-white/20 cursor-not-allowed backdrop-blur-sm border border-white/30'
+                : 'bg-blue-500/80 hover:bg-blue-500 backdrop-blur-sm border border-blue-400/50 hover:border-blue-300 hover:shadow-xl hover:scale-105'
             }`}
           >
             {isLoading ? 'Calculating…' : 'Calculate time to leave'}
