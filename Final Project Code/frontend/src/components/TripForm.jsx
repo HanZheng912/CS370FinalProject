@@ -242,16 +242,17 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
               {isSuggestionsLoading ? (
                 <div className="px-4 py-2 text-sm text-gray-700">Loading suggestions...</div>
               ) : addressSuggestions.length > 0 ? (
-                addressSuggestions.map((suggestion) => (
-                  <button
-                    key={suggestion.id}
-                    type="button"
-                    onClick={() => handleSuggestionSelect(suggestion)}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-blue-100 focus:bg-blue-100 focus:outline-none transition-colors"
-                  >
-                    {suggestion.label}
-                  </button>
-                ))
+                addressSuggestions.map((suggestion, index) => (
+  <button
+    key={suggestion.id ?? `${suggestion.label}-${index}`}
+    type="button"
+    onClick={() => handleSuggestionSelect(suggestion)}
+    className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-blue-100 focus:bg-blue-100 focus:outline-none transition-colors"
+  >
+    {suggestion.label}
+  </button>
+))
+
               ) : (
                 <div className="px-4 py-2 text-sm text-gray-600">No results</div>
               )}
