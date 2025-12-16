@@ -115,15 +115,6 @@ The application will be available at:
 
 ---
 
-## Limitations (At Time of Delivery)
-
-- Backend APIs are mocked and not connected to real Google Maps or GPS services
-- Travel time estimates are approximate and for demonstration purposes
-- Address autocomplete suggestions are simulated
-- Accuracy depends on future backend integration
-
----
-
 ## Responsibility
 
 This frontend module was implemented as part of the team project to handle:
