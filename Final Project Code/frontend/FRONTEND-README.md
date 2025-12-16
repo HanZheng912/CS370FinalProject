@@ -71,26 +71,6 @@ frontend/
 
 ---
 
-## Mocked Backend Integration
-
-The frontend currently uses mock API functions to simulate backend behavior.
-
-### Address Autocomplete
-- Simulates an autocomplete API that returns address suggestions based on user input
-- UI behavior matches real-world autocomplete systems (Google Maps style)
-
-### Travel Time Calculation
-- Simulates travel time estimation based on:
-  - Selected airport
-  - Transportation type
-  - Cab buffer
-  - Weather condition
-- Returns a recommended time to leave and a breakdown of minutes
-
-These mock implementations are isolated in the `src/api/` folder and can be replaced with real backend API calls without modifying UI components.
-
----
-
 ## How to Run the Frontend Locally
 
 ### Requirements
