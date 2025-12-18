@@ -3,6 +3,6 @@ A web app that helps travelers make smarter decisions about when to leave for th
 # Team members 
 - Han Zheng
 - Rayan Nibir
-- Vinesh Supersaud
+- Vinesh Seepersaud
 - Tahmid Hussan
 # Project Overview
