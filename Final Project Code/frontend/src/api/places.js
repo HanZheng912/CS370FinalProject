@@ -12,10 +12,10 @@ export async function getPlaceSuggestions(query) {
 
   const queryTrimmed = query.trim()
 
-  const res = await fetch(
-    `http://localhost:8080/backend/api/places/suggest?q=${encodeURIComponent(queryTrimmed)}`,
-    { headers: { Accept: 'application/json' } }
-  )
+ const res = await fetch(`/api/places/suggest?q=${encodeURIComponent(queryTrimmed)}`, {
+  headers: { Accept: 'application/json' }
+})
+
 
   if (!res.ok) return []
 

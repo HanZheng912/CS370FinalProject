@@ -81,15 +81,17 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
 
     // Prepare form values for API call
     const apiFormValues = {
-      fromAddress,
-      selectedPlaceId: selectedPlace?.id || null,
-      airport,
-      arrivalDate: convertDateToMMDDYYYY(arrivalDate),
-      arrivalTime,
-      transportMode,
-      cabBuffer,
-      weatherCondition: mapWeatherCondition(weatherCondition)
-    }
+  fromAddressText: fromAddress,
+  selectedPlaceId: selectedPlace?.place_id ?? selectedPlace?.id ?? null,
+
+  airport,
+  arrivalDate: convertDateToMMDDYYYY(arrivalDate),
+  arrivalTime,
+  transportMode: transportMode === 'drive' ? 'self' : transportMode, // or just change radio to "self"
+  cabBufferMinutes: transportMode === 'cab' ? Number(cabBuffer) : 0,
+  weatherCondition: mapWeatherCondition(weatherCondition)
+}
+
 
     if (onCalculate) {
       onCalculate(apiFormValues)
