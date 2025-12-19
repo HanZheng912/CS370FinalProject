@@ -31,8 +31,8 @@ frontend/
 │   │   ├── TripForm.jsx       # Main user input form
 │   │   └── ResultsPanel.jsx   # Results modal and breakdown
 │   ├── api/
-│   │   ├── places.js          # Mock address autocomplete API
-│   │   └── estimate.js        # Mock travel time calculation API
+│   │   ├── places.js          # address autocomplete API
+│   │   └── estimate.js        # travel time calculation API
 │   ├── assets/
 │   │   ├── plane-bg.jpeg      # Background image asset
 │   │   └── react.svg           # React logo (default)
