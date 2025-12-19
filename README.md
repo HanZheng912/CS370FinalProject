@@ -9,8 +9,7 @@ A web app that helps travelers make smarter decisions about when to leave for th
 ## How to Run the Frontend Locally
 
 ### Requirements
-- Node.js (v18+ recommended)
-- npm
+- Download Node.js (v18+ recommended)
 
 ### Installation
 
