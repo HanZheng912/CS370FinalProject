@@ -14,14 +14,14 @@ A web app that helps travelers make smarter decisions about when to leave for th
 ### Installation
 
 ```bash
-cd frontend
-npm install
+cd Final Project Code/frontend in terminal
+run 'npm install' in terminal
 ```
 
 ### Run Development Server
 
 ```bash
-npm run dev
+run 'npm run dev' in terminal
 ```
 
 The application will be available at:  
