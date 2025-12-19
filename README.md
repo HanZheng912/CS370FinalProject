@@ -5,4 +5,27 @@ A web app that helps travelers make smarter decisions about when to leave for th
 - Rayan Nibir
 - Vinesh Seepersaud
 - Tahmid Hussan
-# Project Overview
+
+## How to Run the Frontend Locally
+
+### Requirements
+- Node.js (v18+ recommended)
+- npm
+
+### Installation
+
+```bash
+cd frontend
+npm install
+```
+
+### Run Development Server
+
+```bash
+npm run dev
+```
+
+The application will be available at:  
+[http://localhost:5173](http://localhost:5173)
+
+---
