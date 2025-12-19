@@ -1,13 +1,14 @@
+// TripEstimateServlet.java
 package com.cs370.places;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+// import javax.servlet.annotation.WebServlet;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,13 +25,13 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
-@WebServlet("/api/trip/estimate")
+//@WebServlet("/api/trip/estimate")
 public class TripEstimateServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     private static final Gson gson = new Gson();
 
-    // Must be enabled for: Routes + Geocoding + Weather in same Google project
+    // ✅ Server-side only (Routes + Geocoding + Weather must be enabled on this key/project)
     private static final String API_KEY = System.getenv("GOOGLE_MAPS_API_KEY");
 
     // Fixed airport coordinates
@@ -58,89 +59,77 @@ public class TripEstimateServlet extends HttpServlet {
             return;
         }
 
-        // ---- Preview mode (TripForm weather auto-update) ----
+        // ✅ Mode switches
         boolean previewWeather = getBool(body, "previewWeather", false);
-        if (previewWeather) {
-            handlePreviewWeather(body, response);
-            return;
-        }
+        boolean useWeatherApi = getBool(body, "useWeatherApi", false);
 
-        // ---- Full estimate mode ----
-        handleFullEstimate(body, response);
-    }
-
-    // ======================================================
-    // PREVIEW WEATHER (NO ROUTES / NO GEOCODING / NO FROM ADDRESS REQUIRED)
-    // ======================================================
-    private void handlePreviewWeather(JsonObject body, HttpServletResponse response) throws IOException {
-        String airport = getString(body, "airport");
-        String arrivalDate = getString(body, "arrivalDate"); // "MM-DD-YYYY" or "MM/DD/YYYY"
-        String arrivalTime = getString(body, "arrivalTime"); // "HH:MM" (24h) or "h:mm AM"
-
-        if (airport == null || !(airport.equals("JFK") || airport.equals("LGA") || airport.equals("EWR"))) {
-            badRequest(response, "airport must be JFK, LGA, or EWR");
-            return;
-        }
-        if (arrivalDate == null || arrivalTime == null) {
-            badRequest(response, "arrivalDate and arrivalTime are required");
-            return;
-        }
-
-        ZoneId zone = ZoneId.of("America/New_York");
-        ZonedDateTime desiredArrival;
-        try {
-            desiredArrival = parseArrival(arrivalDate, arrivalTime, zone);
-        } catch (Exception e) {
-            badRequest(response, "Invalid arrivalDate/arrivalTime format");
-            return;
-        }
-
-        long desiredArrivalMillis = desiredArrival.toInstant().toEpochMilli();
-        String destLatLng = airportLatLng(airport);
-
-        int weatherExtraMinutes = 0;
-        String weatherSummary = "Weather unavailable";
-
-        try {
-            WeatherResult wx = weatherAtDestinationTime(desiredArrivalMillis, destLatLng);
-            weatherExtraMinutes = wx.extraMinutes;
-            weatherSummary = wx.summary;
-        } catch (Exception ex) {
-            // Don’t fail preview; just return unavailable + 0
-            System.out.println("Weather preview failed: " + ex.getMessage());
-        }
-
-        JsonObject out = new JsonObject();
-        out.addProperty("arrivalDateTime", Instant.ofEpochMilli(desiredArrivalMillis).toString());
-
-        JsonObject breakdown = new JsonObject();
-        breakdown.addProperty("weatherExtraMinutes", weatherExtraMinutes);
-        breakdown.addProperty("weatherSummary", weatherSummary);
-        out.add("breakdown", breakdown);
-
-        response.getWriter().print(gson.toJson(out));
-    }
-
-    // ======================================================
-    // FULL ESTIMATE (ROUTES + OPTIONAL WEATHER)
-    // ======================================================
-    private void handleFullEstimate(JsonObject body, HttpServletResponse response) throws IOException {
-        String fromAddressText = getString(body, "fromAddressText");
-        String selectedPlaceId = getString(body, "selectedPlaceId");
+        // Common fields
         String airport = getString(body, "airport");
         String arrivalDate = getString(body, "arrivalDate");
         String arrivalTime = getString(body, "arrivalTime");
+
+        // =========================
+        // ✅ WEATHER PREVIEW MODE
+        // =========================
+        if (previewWeather) {
+            if (airport == null || !(airport.equals("JFK") || airport.equals("LGA") || airport.equals("EWR"))) {
+                badRequest(response, "airport must be JFK, LGA, or EWR");
+                return;
+            }
+            if (arrivalDate == null || arrivalTime == null) {
+                badRequest(response, "arrivalDate and arrivalTime are required");
+                return;
+            }
+
+            ZoneId zone = ZoneId.of("America/New_York");
+            ZonedDateTime desiredArrival;
+            try {
+                desiredArrival = parseArrival(arrivalDate, arrivalTime, zone);
+            } catch (Exception e) {
+                badRequest(response, "Invalid arrivalDate/arrivalTime format");
+                return;
+            }
+
+            long desiredArrivalMillis = desiredArrival.toInstant().toEpochMilli();
+            String destLatLng = airportLatLng(airport);
+
+            int weatherExtraMinutes = 0;
+            String weatherSummary = "Weather unavailable";
+
+            try {
+                WeatherResult wx = weatherAtDestinationTime(desiredArrivalMillis, destLatLng);
+                weatherExtraMinutes = wx.extraMinutes;
+                weatherSummary = wx.summary;
+            } catch (Exception ignored) {
+                // Don't 500 for preview mode
+            }
+
+            JsonObject out = new JsonObject();
+            out.addProperty("arrivalDateTime", Instant.ofEpochMilli(desiredArrivalMillis).toString());
+
+            JsonObject breakdown = new JsonObject();
+            breakdown.addProperty("weatherExtraMinutes", weatherExtraMinutes);
+            breakdown.addProperty("weatherSummary", weatherSummary);
+            out.add("breakdown", breakdown);
+
+            response.getWriter().print(gson.toJson(out));
+            return;
+        }
+
+        // =========================
+        // ✅ FULL ESTIMATE MODE
+        // =========================
+        String fromAddressText = getString(body, "fromAddressText");
+        String selectedPlaceId = getString(body, "selectedPlaceId");
         String transportMode = getString(body, "transportMode");
         Integer cabBufferMinutes = getInt(body, "cabBufferMinutes");
 
-        // Manual weather fallback ONLY if useWeatherApi == false
+        // Optional: if NOT using Weather API, allow manual weatherCondition
         String weatherCondition = getString(body, "weatherCondition");
 
-        // Default TRUE to be bulletproof (prevents your “weatherCondition required” error)
-        boolean useWeatherApi = getBool(body, "useWeatherApi", true);
-
+        // Basic validation
         if (fromAddressText == null || fromAddressText.trim().isEmpty()) {
-            fromAddressText = getString(body, "fromAddress");
+            fromAddressText = getString(body, "fromAddress"); // fallback
         }
         if (fromAddressText == null || fromAddressText.trim().isEmpty()) {
             badRequest(response, "fromAddressText is required");
@@ -162,9 +151,14 @@ public class TripEstimateServlet extends HttpServlet {
             badRequest(response, "cabBufferMinutes must be >= 0");
             return;
         }
+        if (!useWeatherApi && (weatherCondition == null || weatherCondition.isBlank())) {
+            badRequest(response, "weatherCondition is required when useWeatherApi=false");
+            return;
+        }
 
         int cabBufferMinutesUsed = transportMode.equals("cab") ? cabBufferMinutes : 0;
 
+        // Parse desired arrival (NY timezone)
         ZoneId zone = ZoneId.of("America/New_York");
         ZonedDateTime desiredArrival;
         try {
@@ -179,9 +173,9 @@ public class TripEstimateServlet extends HttpServlet {
 
         String destLatLng = airportLatLng(airport);
 
-        // Weather minutes always computed for destination (airport coords)
-        int weatherExtraMinutes = 0;
-        String weatherSummary = "Weather unavailable";
+        // ✅ Compute weatherExtraMinutes
+        int weatherExtraMinutes;
+        String weatherSummary;
 
         if (useWeatherApi) {
             try {
@@ -189,17 +183,12 @@ public class TripEstimateServlet extends HttpServlet {
                 weatherExtraMinutes = wx.extraMinutes;
                 weatherSummary = wx.summary;
             } catch (Exception ex) {
-                System.out.println("Weather API failed: " + ex.getMessage());
+                // don't kill estimate if weather fails
                 weatherExtraMinutes = 0;
                 weatherSummary = "Weather unavailable";
             }
         } else {
-            // Manual fallback if they really want it
-            if (weatherCondition == null || weatherCondition.isBlank()) {
-                badRequest(response, "weatherCondition is required when useWeatherApi=false");
-                return;
-            }
-            weatherExtraMinutes = weatherExtraMinutesManual(weatherCondition);
+            weatherExtraMinutes = weatherExtraMinutes(weatherCondition);
             weatherSummary = weatherCondition;
         }
 
@@ -235,7 +224,7 @@ public class TripEstimateServlet extends HttpServlet {
             return;
         }
 
-        // Binary search for best depart time
+        // Binary search best depart time in [now, targetArrivalAdjusted]
         try {
             long lo = nowMillis;
             long hi = targetArrivalAdjustedMillis;
@@ -284,9 +273,8 @@ public class TripEstimateServlet extends HttpServlet {
         }
     }
 
-    // ======================================================
-    // HELPERS
-    // ======================================================
+    // ---------------- helpers ----------------
+
     private static JsonObject readJsonBody(HttpServletRequest request) throws IOException {
         StringBuilder sb = new StringBuilder();
         try (BufferedReader br = new BufferedReader(
@@ -334,16 +322,7 @@ public class TripEstimateServlet extends HttpServlet {
         return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
-    private static String airportLatLng(String airport) {
-        switch (airport) {
-            case "JFK": return JFK_LATLNG;
-            case "LGA": return LGA_LATLNG;
-            case "EWR": return EWR_LATLNG;
-            default: return JFK_LATLNG;
-        }
-    }
-
-    private static int weatherExtraMinutesManual(String weatherCondition) {
+    private static int weatherExtraMinutes(String weatherCondition) {
         switch (weatherCondition) {
             case "Clear": return 0;
             case "Light rain": return 5;
@@ -354,9 +333,19 @@ public class TripEstimateServlet extends HttpServlet {
         }
     }
 
+    private static String airportLatLng(String airport) {
+        switch (airport) {
+            case "JFK": return JFK_LATLNG;
+            case "LGA": return LGA_LATLNG;
+            case "EWR": return EWR_LATLNG;
+            default: return JFK_LATLNG;
+        }
+    }
+
     /**
-     * arrivalDate: "MM-DD-YYYY" or "MM/DD/YYYY"
-     * arrivalTime: "HH:MM" (24h) OR "h:mm AM/PM"
+     * Parses:
+     * - arrivalDate: "MM-DD-YYYY" or "MM/DD/YYYY"
+     * - arrivalTime: "HH:MM" (24h) or "hh:mm AM/PM"
      */
     private static ZonedDateTime parseArrival(String arrivalDate, String arrivalTime, ZoneId zone) {
         String d = arrivalDate.trim().replace('/', '-');
@@ -383,9 +372,9 @@ public class TripEstimateServlet extends HttpServlet {
         return ZonedDateTime.of(date, time, zone);
     }
 
-    // ======================================================
-    // ROUTES API
-    // ======================================================
+    /**
+     * Routes API: computeRoutes (traffic-aware).
+     */
     private int routesDurationMinutes(long departMillis, String selectedPlaceId, String fromAddressText, String destLatLng)
             throws IOException {
 
@@ -403,6 +392,7 @@ public class TripEstimateServlet extends HttpServlet {
 
         String departureTimeRfc3339 = Instant.ofEpochMilli(departMillis).toString();
 
+        // Destination lat/lng
         String[] parts = destLatLng.split(",");
         String lat = parts[0].trim();
         String lng = parts[1].trim();
@@ -444,13 +434,16 @@ public class TripEstimateServlet extends HttpServlet {
 
         String durStr = json.getAsJsonArray("routes")
                 .get(0).getAsJsonObject()
-                .get("duration").getAsString(); // e.g. "2700s"
+                .get("duration").getAsString(); // "2700s"
 
         long seconds = Long.parseLong(durStr.replace("s", "").trim());
         long minutes = (seconds + 59) / 60;
         return (int) minutes;
     }
 
+    /**
+     * Geocoding fallback for free-text origin.
+     */
     private double[] geocodeToLatLng(String address) throws IOException {
         if (address == null || address.trim().isEmpty()) {
             throw new IOException("Cannot geocode empty address");
@@ -480,6 +473,7 @@ public class TripEstimateServlet extends HttpServlet {
         }
 
         JsonObject json = gson.fromJson(resp, JsonObject.class);
+
         String status = (json != null && json.has("status")) ? json.get("status").getAsString() : "UNKNOWN";
         String errorMsg = (json != null && json.has("error_message")) ? json.get("error_message").getAsString() : "";
 
@@ -501,9 +495,8 @@ public class TripEstimateServlet extends HttpServlet {
         return new double[] { loc.get("lat").getAsDouble(), loc.get("lng").getAsDouble() };
     }
 
-    // ======================================================
-    // WEATHER API (DESTINATION = AIRPORT COORDS)
-    // ======================================================
+    // -------- Weather API integration --------
+
     private static class WeatherResult {
         int extraMinutes;
         String summary;
@@ -513,6 +506,10 @@ public class TripEstimateServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Uses Google Weather API hourly forecast.
+     * Maps to your buckets: Clear / Light rain / Heavy rain / Snow or ice / Severe weather
+     */
     private WeatherResult weatherAtDestinationTime(long desiredArrivalMillis, String destLatLng) throws IOException {
         String[] parts = destLatLng.split(",");
         String lat = parts[0].trim();
@@ -545,6 +542,7 @@ public class TripEstimateServlet extends HttpServlet {
         }
 
         JsonObject json = gson.fromJson(resp, JsonObject.class);
+
         if (json == null || !json.has("forecastHours")) {
             throw new IOException("Weather API returned no forecastHours");
         }
@@ -557,38 +555,21 @@ public class TripEstimateServlet extends HttpServlet {
         int idx = Math.min(hourOffset, hours.size() - 1);
         JsonObject hour = hours.get(idx).getAsJsonObject();
 
-        // Very defensive: try a few shapes
         String precipType = "NONE";
         int precipChance = 0;
 
-        // Shape A: precipitation.probability.type / percent
-        JsonObject precip = safeObj(hour, "precipitation");
-        if (precip != null) {
+        if (hour.has("precipitation")) {
+            JsonObject precip = safeObj(hour, "precipitation");
             JsonObject prob = safeObj(precip, "probability");
             if (prob != null) {
-                precipType = safeStr(prob, "type", precipType);
-                precipChance = safeInt(prob, "percent", precipChance);
+                if (prob.has("type")) precipType = safeStr(prob, "type", precipType);
+                if (prob.has("percent")) precipChance = safeInt(prob, "percent", precipChance);
             }
         }
 
-        // Shape B: precipitationProbability.percent
-        JsonObject precipitationProbability = safeObj(hour, "precipitationProbability");
-        if (precipitationProbability != null) {
-            precipChance = safeInt(precipitationProbability, "percent", precipChance);
-        }
+        String summary = mapPrecipToSummary(precipType, precipChance);
+        int extra = weatherExtraMinutes(summary);
 
-        // Shape C: condition / weatherCondition
-        String conditionText = safeStr(hour, "condition", null);
-        if (conditionText == null) conditionText = safeStr(hour, "weatherCondition", null);
-
-        String summary;
-        if (conditionText != null && !conditionText.isBlank()) {
-            summary = mapConditionText(conditionText);
-        } else {
-            summary = mapPrecipToSummary(precipType, precipChance);
-        }
-
-        int extra = weatherExtraMinutesManual(summary);
         return new WeatherResult(extra, summary);
     }
 
@@ -615,7 +596,7 @@ public class TripEstimateServlet extends HttpServlet {
         return def;
     }
 
-    private static String mapPrecipToSummary(String precipType, int precipChance) {
+    private String mapPrecipToSummary(String precipType, int precipChance) {
         if (precipChance < 20) return "Clear";
 
         String t = (precipType == null) ? "" : precipType.toUpperCase();
@@ -630,18 +611,8 @@ public class TripEstimateServlet extends HttpServlet {
         return "Light rain";
     }
 
-    private static String mapConditionText(String conditionText) {
-        String t = conditionText.toLowerCase();
-        if (t.contains("snow") || t.contains("ice") || t.contains("sleet") || t.contains("freez")) return "Snow or ice";
-        if (t.contains("thunder") || t.contains("storm") || t.contains("severe")) return "Severe weather";
-        if (t.contains("heavy") && t.contains("rain")) return "Heavy rain";
-        if (t.contains("rain") || t.contains("drizzle")) return "Light rain";
-        return "Clear";
-    }
+    // -------- IO helpers --------
 
-    // ======================================================
-    // IO
-    // ======================================================
     private static String readAll(HttpURLConnection conn) throws IOException {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
