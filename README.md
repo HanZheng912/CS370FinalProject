@@ -12,19 +12,21 @@ A web app that helps travelers make smarter decisions about when to leave for th
 - Download Node.js (v18+ recommended)
 
 ### Installation
+Open your terminal and: 
 
 ```bash
-cd Final Project Code/frontend in terminal
-run 'npm install' in terminal
+cd frontend
+npm install
 ```
 
 ### Run Development Server
 
 ```bash
-run 'npm run dev' in terminal
+npm run dev
 ```
 
 The application will be available at:  
 [http://localhost:5173](http://localhost:5173)
 
+To learn more about the frontend, visit the frontend README file within the frontend folder!
 ---

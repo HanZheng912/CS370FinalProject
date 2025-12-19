@@ -6,8 +6,6 @@ This folder contains the **frontend implementation** of the Airport Departure Pl
 
 The frontend is responsible for the complete user interface, user interaction flow, client-side validation, and result presentation.
 
-The application allows users to enter trip details such as starting address, destination airport, arrival date/time, transportation type, cab buffer, and weather condition, and then displays a recommended time to leave with a clear breakdown of how the estimate was calculated.
-
 At the time of delivery, backend API calls are mocked to allow independent frontend development. The frontend is designed so real backend endpoints can be integrated without UI changes.
 
 ---
@@ -31,8 +29,8 @@ frontend/
 │   │   ├── TripForm.jsx       # Main user input form
 │   │   └── ResultsPanel.jsx   # Results modal and breakdown
 │   ├── api/
-│   │   ├── places.js          # Mock address autocomplete API
-│   │   └── estimate.js        # Mock travel time calculation API
+│   │   ├── places.js          # address autocomplete API
+│   │   └── estimate.js        # travel time calculation API
 │   ├── assets/
 │   │   ├── plane-bg.jpeg      # Background image asset
 │   │   └── react.svg           # React logo (default)
