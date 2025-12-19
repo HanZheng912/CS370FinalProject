@@ -1,47 +1,187 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { validateTripForm } from '../utils/validation'
 import { getPlaceSuggestions } from '../api/places'
+import { fetchWeatherPreview } from '../api/estimate'
+
+// ✅ keep helpers OUTSIDE hooks/handlers
+const convertDateToMMDDYYYY = (dateString) => {
+  if (!dateString) return ''
+  const [year, month, day] = dateString.split('-')
+  return `${month}-${day}-${year}`
+}
 
 function TripForm({ onCalculate, isLoading = false, onResetFields }) {
+  // ---- form state ----
   const [fromAddress, setFromAddress] = useState('')
   const [airport, setAirport] = useState('')
   const [arrivalDate, setArrivalDate] = useState('')
   const [arrivalTime, setArrivalTime] = useState('')
   const [transportMode, setTransportMode] = useState('')
   const [cabBuffer, setCabBuffer] = useState('10')
+
+  // ---- auto weather preview ----
   const [weatherCondition, setWeatherCondition] = useState('')
+  const [weatherExtraMinutes, setWeatherExtraMinutes] = useState(0)
+  const [weatherLoading, setWeatherLoading] = useState(false)
+
+  // ---- validation + autocomplete ----
   const [errors, setErrors] = useState({})
   const [addressSuggestions, setAddressSuggestions] = useState([])
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false)
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false)
   const [selectedPlace, setSelectedPlace] = useState(null)
+
   const addressInputRef = useRef(null)
   const suggestionsRef = useRef(null)
 
-  // Reset form fields except fromAddress and airport when onResetFields changes
+  // ✅ Reset form fields except fromAddress and airport when onResetFields changes
   useEffect(() => {
-    if (onResetFields) {
-      // Preserve fromAddress and airport, reset everything else
-      setArrivalDate('')
-      setArrivalTime('')
-      setTransportMode('')
-      setCabBuffer('10')
-      setWeatherCondition('')
-      setErrors({})
-      setSelectedPlace(null)
+    if (!onResetFields) return
+
+    setArrivalDate('')
+    setArrivalTime('')
+    setTransportMode('')
+    setCabBuffer('10')
+
+    setWeatherCondition('')
+    setWeatherExtraMinutes(0)
+    setWeatherLoading(false)
+
+    setErrors({})
+    setSelectedPlace(null)
+    setAddressSuggestions([])
+    setIsSuggestionsOpen(false)
+    setIsSuggestionsLoading(false)
+  }, [onResetFields])
+
+  // ✅ Address suggestions fetch (debounced)
+  useEffect(() => {
+    // clear selected place if user edits input
+    setSelectedPlace(null)
+
+    const q = fromAddress.trim()
+    if (q.length < 3) {
       setAddressSuggestions([])
       setIsSuggestionsOpen(false)
+      setIsSuggestionsLoading(false)
+      return
     }
-  }, [onResetFields])
+
+    setIsSuggestionsOpen(true)
+
+    const timeoutId = setTimeout(async () => {
+      setIsSuggestionsLoading(true)
+      try {
+        const suggestions = await getPlaceSuggestions(q)
+        setAddressSuggestions(Array.isArray(suggestions) ? suggestions : [])
+        setIsSuggestionsOpen(true)
+      } catch (e) {
+        setAddressSuggestions([])
+        setIsSuggestionsOpen(false)
+      } finally {
+        setIsSuggestionsLoading(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(timeoutId)
+  }, [fromAddress])
+
+  // ✅ Close suggestions when clicking outside
+  useEffect(() => {
+    if (!isSuggestionsOpen) return
+
+    const handleClickOutside = (event) => {
+      const isClickOnInput =
+        addressInputRef.current &&
+        (addressInputRef.current === event.target ||
+          addressInputRef.current.contains(event.target))
+
+      const isClickOnSuggestions =
+        suggestionsRef.current && suggestionsRef.current.contains(event.target)
+
+      if (!isClickOnInput && !isClickOnSuggestions) {
+        setIsSuggestionsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isSuggestionsOpen])
+
+  // ✅ Close dropdown on Escape
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === 'Escape' && isSuggestionsOpen) setIsSuggestionsOpen(false)
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [isSuggestionsOpen])
+
+  // ✅ Auto weather preview (debounced)
+  useEffect(() => {
+    let cancelled = false
+
+    const run = async () => {
+      if (!airport || !arrivalDate || !arrivalTime) {
+        setWeatherCondition('')
+        setWeatherExtraMinutes(0)
+        return
+      }
+
+      setWeatherLoading(true)
+      try {
+        const wx = await fetchWeatherPreview({
+          airport,
+          arrivalDate: convertDateToMMDDYYYY(arrivalDate),
+          arrivalTime
+        })
+
+        if (cancelled) return
+
+        const summary = wx?.weatherCondition || wx?.weatherSummary || ''
+        const extra = Number(wx?.weatherExtraMinutes) || 0
+
+        setWeatherCondition(summary)
+        setWeatherExtraMinutes(extra)
+
+        // clear any old validation error once auto-weather is set
+        setErrors((prev) => {
+          const next = { ...prev }
+          delete next.weatherCondition
+          return next
+        })
+      } catch (e) {
+        if (cancelled) return
+        setWeatherCondition('')
+        setWeatherExtraMinutes(0)
+      } finally {
+        if (!cancelled) setWeatherLoading(false)
+      }
+    }
+
+    const t = setTimeout(run, 350)
+    return () => {
+      cancelled = true
+      clearTimeout(t)
+    }
+  }, [airport, arrivalDate, arrivalTime])
+
+  const handleAddressChange = (e) => {
+    setFromAddress(e.target.value)
+  }
+
+  const handleSuggestionSelect = (suggestion) => {
+    setSelectedPlace(suggestion)
+    setFromAddress(suggestion.label)
+    setIsSuggestionsOpen(false)
+    setAddressSuggestions([])
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    
-    // Prevent double submit - if already loading, do nothing
-    if (isLoading) {
-      return
-    }
-    
+    if (isLoading) return
+
+    // ✅ validate using auto weatherCondition (read-only)
     const formValues = {
       fromAddress,
       airport,
@@ -53,161 +193,47 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
     }
 
     const { isValid, errors: validationErrors } = validateTripForm(formValues)
-    
     if (!isValid) {
       setErrors(validationErrors)
       return
     }
 
     setErrors({})
-    
-    // Convert date format from YYYY-MM-DD to MM-DD-YYYY
-    const convertDateToMMDDYYYY = (dateString) => {
-      const [year, month, day] = dateString.split('-')
-      return `${month}-${day}-${year}`
-    }
 
-    // Map weather condition from form value to API format
-    const mapWeatherCondition = (value) => {
-      const weatherMap = {
-        'clear': 'Clear',
-        'light-rain': 'Light rain',
-        'heavy-rain': 'Heavy rain',
-        'snow-ice': 'Snow or ice',
-        'severe': 'Severe weather'
-      }
-      return weatherMap[value] || value
-    }
-
-    // Prepare form values for API call
     const apiFormValues = {
-      fromAddress,
-      selectedPlaceId: selectedPlace?.id || null,
+      fromAddressText: fromAddress,
+      selectedPlaceId: selectedPlace?.place_id ?? selectedPlace?.id ?? null,
+
       airport,
       arrivalDate: convertDateToMMDDYYYY(arrivalDate),
       arrivalTime,
-      transportMode,
-      cabBuffer,
-      weatherCondition: mapWeatherCondition(weatherCondition)
+
+      transportMode: transportMode === 'drive' ? 'self' : transportMode,
+      cabBufferMinutes: transportMode === 'cab' ? Number(cabBuffer) : 0,
+
+      // keep sending, but backend will ignore when useWeatherApi=true
+      weatherCondition,
+
+      // ✅ tell backend to compute weather
+      useWeatherApi: true
     }
 
-    if (onCalculate) {
-      onCalculate(apiFormValues)
-    }
-  }
-
-  const isFormValid = () => {
-    const formValues = {
-      fromAddress,
-      airport,
-      arrivalDate,
-      arrivalTime,
-      transportMode,
-      cabBuffer,
-      weatherCondition
-    }
-    const { isValid } = validateTripForm(formValues)
-    return isValid
-  }
-
-  // Fetch address suggestions as user types
-  useEffect(() => {
-    // Clear selectedPlace when fromAddress changes
-    setSelectedPlace(null)
-    
-    // Open dropdown when user types
-    if (fromAddress.trim().length >= 3) {
-      setIsSuggestionsOpen(true)
-    }
-
-    const fetchSuggestions = async () => {
-      if (fromAddress.trim().length < 3) {
-        setAddressSuggestions([])
-        setIsSuggestionsOpen(false)
-        setIsSuggestionsLoading(false)
-        return
-      }
-
-      setIsSuggestionsLoading(true)
-      try {
-        const suggestions = await getPlaceSuggestions(fromAddress)
-        setAddressSuggestions(suggestions)
-        // Keep dropdown open to show results or "No results" message
-        setIsSuggestionsOpen(true)
-      } catch (error) {
-        setAddressSuggestions([])
-        setIsSuggestionsOpen(false)
-      } finally {
-        setIsSuggestionsLoading(false)
-      }
-    }
-
-    const timeoutId = setTimeout(fetchSuggestions, 300) // Debounce 300ms
-    return () => clearTimeout(timeoutId)
-  }, [fromAddress])
-
-  // Close suggestions when clicking outside
-  useEffect(() => {
-    if (!isSuggestionsOpen) return
-
-    const handleClickOutside = (event) => {
-      // Check if click is on the address input
-      const isClickOnInput = addressInputRef.current && 
-        (addressInputRef.current === event.target || addressInputRef.current.contains(event.target))
-      
-      // Check if click is on the suggestions dropdown
-      const isClickOnSuggestions = suggestionsRef.current && 
-        suggestionsRef.current.contains(event.target)
-      
-      // If click is neither on input nor suggestions, close the dropdown
-      if (!isClickOnInput && !isClickOnSuggestions) {
-        setIsSuggestionsOpen(false)
-      }
-    }
-
-    // Use a slight delay to avoid conflicts with other click handlers
-    const timeoutId = setTimeout(() => {
-      document.addEventListener('mousedown', handleClickOutside)
-    }, 0)
-
-    return () => {
-      clearTimeout(timeoutId)
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isSuggestionsOpen])
-
-  // Close dropdown on Escape key
-  useEffect(() => {
-    const handleEscape = (event) => {
-      if (event.key === 'Escape' && isSuggestionsOpen) {
-        setIsSuggestionsOpen(false)
-      }
-    }
-
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [isSuggestionsOpen])
-
-  const handleAddressChange = (e) => {
-    setFromAddress(e.target.value)
-    // useEffect will handle clearing selectedPlace and opening dropdown
-  }
-
-  const handleSuggestionSelect = (suggestion) => {
-    setSelectedPlace(suggestion)
-    setFromAddress(suggestion.label)
-    setIsSuggestionsOpen(false)
-    setAddressSuggestions([])
+    onCalculate?.(apiFormValues)
   }
 
   return (
     <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-6 md:p-8 border border-white/20">
-      <h2 className="text-2xl font-semibold text-white mb-6 drop-shadow-md text-center">Trip Details</h2>
-      
+      <h2 className="text-2xl font-semibold text-white mb-6 drop-shadow-md text-center">
+        Trip Details
+      </h2>
+
       <form className="space-y-6" onSubmit={handleSubmit}>
         {/* From address */}
         <div className="relative">
-          <label htmlFor="fromAddress" className="block text-sm font-medium text-white/90 mb-2 drop-shadow-sm">
+          <label
+            htmlFor="fromAddress"
+            className="block text-sm font-medium text-white/90 mb-2 drop-shadow-sm"
+          >
             From address
           </label>
           <input
@@ -218,10 +244,7 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
             value={fromAddress}
             onChange={handleAddressChange}
             onFocus={() => {
-              // Open dropdown on focus if input has 3+ characters
-              if (fromAddress.trim().length >= 3) {
-                setIsSuggestionsOpen(true)
-              }
+              if (fromAddress.trim().length >= 3) setIsSuggestionsOpen(true)
             }}
             placeholder="Enter your starting address"
             className={`w-full px-4 py-2.5 bg-white/20 backdrop-blur-sm border rounded-lg text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all ${
@@ -232,8 +255,8 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
           {errors.fromAddress && (
             <p className="mt-1 text-sm text-red-300 drop-shadow-sm">{errors.fromAddress}</p>
           )}
-          
-          {/* Address suggestions dropdown */}
+
+          {/* Suggestions dropdown */}
           {isSuggestionsOpen && fromAddress.trim().length >= 3 && (
             <div
               ref={suggestionsRef}
@@ -243,16 +266,15 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
                 <div className="px-4 py-2 text-sm text-gray-700">Loading suggestions...</div>
               ) : addressSuggestions.length > 0 ? (
                 addressSuggestions.map((suggestion, index) => (
-  <button
-    key={suggestion.id ?? `${suggestion.label}-${index}`}
-    type="button"
-    onClick={() => handleSuggestionSelect(suggestion)}
-    className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-blue-100 focus:bg-blue-100 focus:outline-none transition-colors"
-  >
-    {suggestion.label}
-  </button>
-))
-
+                  <button
+                    key={suggestion.id ?? `${suggestion.label}-${index}`}
+                    type="button"
+                    onClick={() => handleSuggestionSelect(suggestion)}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-blue-100 focus:bg-blue-100 focus:outline-none transition-colors"
+                  >
+                    {suggestion.label}
+                  </button>
+                ))
               ) : (
                 <div className="px-4 py-2 text-sm text-gray-600">No results</div>
               )}
@@ -344,6 +366,7 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
                 I am driving myself
               </label>
             </div>
+
             <div className="flex items-center">
               <input
                 type="radio"
@@ -359,11 +382,11 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
               </label>
             </div>
           </div>
+
           {errors.transportMode && (
             <p className="mt-1 text-sm text-red-300 drop-shadow-sm">{errors.transportMode}</p>
           )}
 
-          {/* Cab pickup buffer - shown when cab selected */}
           {transportMode === 'cab' && (
             <div className="mt-4 ml-6">
               <label htmlFor="cabBuffer" className="block text-sm font-medium text-white/90 mb-2 drop-shadow-sm">
@@ -392,33 +415,34 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
           )}
         </div>
 
-        {/* Weather condition */}
+        {/* Weather condition (auto) */}
         <div>
           <label htmlFor="weather" className="block text-sm font-medium text-white/90 mb-2 drop-shadow-sm">
-            Weather condition
+            Weather at arrival time
           </label>
-          <select
+
+          <input
             id="weather"
             name="weather"
-            value={weatherCondition}
-            onChange={(e) => setWeatherCondition(e.target.value)}
-            className={`w-full px-4 py-2.5 bg-white/20 backdrop-blur-sm border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all ${
+            value={weatherLoading ? 'Checking weather...' : (weatherCondition || '—')}
+            readOnly
+            className={`w-full px-4 py-2.5 bg-white/20 backdrop-blur-sm border rounded-lg text-white focus:outline-none ${
               errors.weatherCondition ? 'border-red-400' : 'border-white/30'
             }`}
-          >
-            <option value="" className="bg-gray-800 text-white">Select weather condition</option>
-            <option value="clear" className="bg-gray-800 text-white">Clear</option>
-            <option value="light-rain" className="bg-gray-800 text-white">Light rain</option>
-            <option value="heavy-rain" className="bg-gray-800 text-white">Heavy rain</option>
-            <option value="snow-ice" className="bg-gray-800 text-white">Snow or ice</option>
-            <option value="severe" className="bg-gray-800 text-white">Severe weather</option>
-          </select>
+          />
+
+          <p className="mt-2 text-xs text-white/70 italic drop-shadow-sm">
+            {weatherCondition
+              ? `Weather delay added: ${weatherExtraMinutes} min`
+              : 'Pick an arrival date/time to see the weather.'}
+          </p>
+
           {errors.weatherCondition && (
             <p className="mt-1 text-sm text-red-300 drop-shadow-sm">{errors.weatherCondition}</p>
           )}
         </div>
 
-        {/* Submit button */}
+        {/* Submit */}
         <div className="pt-4 flex justify-center">
           <button
             type="submit"
@@ -434,8 +458,7 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
         </div>
       </form>
     </div>
-  );
+  )
 }
 
-export default TripForm;
-
+export default TripForm
