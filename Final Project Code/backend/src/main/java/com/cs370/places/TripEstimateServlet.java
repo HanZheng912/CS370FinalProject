@@ -314,15 +314,20 @@ public class TripEstimateServlet extends HttpServlet {
     String lng = parts[1].trim();
 
     // Build origin waypoint
-    String originWaypointJson;
-    if (selectedPlaceId != null && !selectedPlaceId.isBlank()) {
-        originWaypointJson = "{ \"placeId\": \"" + escapeJson(selectedPlaceId) + "\" }";
-    } else {
-        // Fallback: geocode address -> latLng
-        double[] originLatLng = geocodeToLatLng(fromAddressText); // [lat, lng]
-        originWaypointJson = "{ \"location\": { \"placeId\": \"" + escapeJson(selectedPlaceId) + "\" } }";
+    // Build origin waypoint
+String originWaypointJson;
 
-    }
+if (selectedPlaceId != null && !selectedPlaceId.isBlank()) {
+    // Best case: use Place ID directly
+    originWaypointJson = "{ \"placeId\": \"" + escapeJson(selectedPlaceId) + "\" }";
+} else {
+    // Fallback: geocode address -> latLng
+    double[] originLatLng = geocodeToLatLng(fromAddressText); // [lat, lng]
+
+    originWaypointJson =
+        "{ \"location\": { \"latLng\": { \"latitude\": " + originLatLng[0] + ", \"longitude\": " + originLatLng[1] + " } } }";
+}
+
 
     String destinationWaypointJson =
         "{ \"location\": { \"latLng\": { \"latitude\": " + lat + ", \"longitude\": " + lng + " } } }";
