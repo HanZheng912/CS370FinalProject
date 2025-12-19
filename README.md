@@ -28,4 +28,5 @@ npm run dev
 The application will be available at:  
 [http://localhost:5173](http://localhost:5173)
 
+To learn more about the frontend, visit the frontend README file within the frontend folder!
 ---
