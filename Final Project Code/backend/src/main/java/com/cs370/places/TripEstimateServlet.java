@@ -25,7 +25,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
-//@WebServlet("/api/trip/estimate")
+@WebServlet("/api/trip/estimate")
 public class TripEstimateServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
