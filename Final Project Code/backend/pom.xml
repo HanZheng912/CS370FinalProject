@@ -6,7 +6,7 @@
   <groupId>com.cs370</groupId>
   <artifactId>backend</artifactId>
   <version>1.0.0</version>
-  <packaging>jar</packaging>
+  <packaging>war</packaging>
 
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
