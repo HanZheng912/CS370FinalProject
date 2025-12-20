@@ -1,48 +1,196 @@
 Airport Departure Planner
 
-The Airport Departure Planner is a web application designed to help users determine the best time to leave for the airport. Users enter their starting address, select an airport, choose an arrival date and time, and provide additional trip details. The system then calculates and displays a recommended departure time along with a breakdown of contributing factors.
+The Airport Departure Planner is a web application designed to help users determine the best time to leave for the airport. Users enter their starting address, select an airport, choose an arrival date and time, and provide trip details such as transportation type and weather. The system calculates and displays a recommended departure time along with a clear breakdown of how that time was determined.
 
-The project uses a React frontend and a Java backend deployed on Apache Tomcat. Address autocomplete functionality is powered by the Google Places API, which is accessed securely through the backend to keep API keys hidden from the frontend.
+The application replaces all mock logic with real backend calculations using live Google APIs. Traffic, distance, weather delays, and transportation buffers are all factored into the final result.
+
+Key Features
+
+Real recommended departure time based on traffic and distance
+
+Weather-based delay calculation using live forecast data
+
+Address autocomplete using Google Places
+
+Support for typed addresses and Place IDs
+
+Clear breakdown showing base travel time, weather delay, and buffer time
+
+Secure backend-only API usage (no API keys exposed to frontend)
+
+APIs Used
+
+The project integrates several Google APIs on the backend:
+
+Google Places API – Address autocomplete and Place ID support
+
+Google Geocoding API – Fallback when a Place ID is not available
+
+Google Routes API – Calculates base travel time with real traffic
+
+Google Weather API – Fetches forecast data and converts it into weather delay minutes
+
+All API calls are handled by the backend to keep keys secure.
 
 Project Structure
 
-The project is divided into two main parts: a backend and a frontend. The backend contains Java servlet files, configuration files, and build settings, while the frontend contains the React application, configuration files, and UI components. The backend is packaged and deployed as a WAR file, and the frontend runs as a development server during local testing.
+The project is split into two main folders:
+
+backend/
+Contains Java servlets, API logic, validation, and Google API integrations. The backend is built as a WAR file and deployed to Apache Tomcat.
+
+frontend/
+Contains the React application built with Vite. This includes the trip form, results modal, layout, and validation logic.
 
 Backend Overview
 
-The backend is built using Java Servlets and runs on Apache Tomcat. Its main responsibility is to handle address autocomplete requests from the frontend.
+The backend is built using Java Servlets and runs on Apache Tomcat.
 
-When the backend receives a search query, it forwards the request to the Google Places Autocomplete API. The response from Google is then processed and transformed into a simplified format that the frontend can easily consume. This prevents unnecessary data from being sent to the client and keeps the application efficient.
+Its responsibilities include:
 
-CORS handling was added to the backend so that requests from the frontend development server are allowed during local development. This resolved cross-origin request issues caused by the frontend and backend running on different ports.
+Validating all incoming trip data
 
-The backend was tested independently by calling the autocomplete endpoint directly in a browser to verify that valid address suggestions were returned.
+Calling Google APIs (Places, Geocoding, Routes, Weather)
+
+Calculating base travel time using traffic-aware routing
+
+Applying weather delay minutes
+
+Applying cab pickup buffer time if selected
+
+Computing the final recommended departure time
+
+Returning a clean JSON response to the frontend
+
+The main backend logic lives in TripEstimateServlet.java.
+CORS handling is enabled to allow communication with the frontend dev server during local testing.
 
 Frontend Overview
 
-The frontend is built using React and Vite and functions as a single-page application.
+The frontend is built with React and Vite as a single-page application.
 
-The main user interface includes a trip form where users can enter a starting address, select an airport, choose a desired arrival date and time, and provide transportation and weather information. The address input field includes a live autocomplete dropdown that updates as the user types.
+Key UI components include:
 
-The frontend originally used a static list of mock New York City addresses to simulate autocomplete behavior. This mock data was removed and replaced with real address suggestions fetched from the backend API. The frontend now dynamically displays live suggestions based on user input.
+TripForm.jsx – Handles user input and validation
 
-State management is used to control loading states, dropdown visibility, selected values, and validation messages.
+ResultsPanel.jsx – Displays the recommended departure time and breakdown
+
+Layout.jsx – Provides consistent page layout
+
+App.jsx – Controls overall state and request flow
+
+The frontend sends structured trip data to the backend and displays results returned by the server. All mock data has been removed.
 
 Address Autocomplete Flow
 
-When the user types at least three characters into the address input field, the frontend sends the query to the backend autocomplete endpoint. The backend then calls the Google Places API, processes the response, and returns a simplified list of address suggestions.
+User types at least three characters into the address field
 
-The frontend displays these suggestions in a dropdown below the input field. Selecting a suggestion fills the address field and closes the dropdown. This flow was tested by entering locations such as “Queens” and confirming that real Google Places results appeared correctly.
+Frontend sends the query to the backend
 
-How to Run the Project
-Backend Setup
+Backend calls Google Places API
 
-To run the backend, Java must be installed and configured on the system. A Google Maps API key must be created and set as an environment variable so it can be accessed by the backend. The backend project is built into a WAR file and deployed to Apache Tomcat. Once Tomcat is started, the backend API endpoint can be accessed locally to confirm that it is running correctly.
+Results are simplified and returned
+
+Frontend displays suggestions in a dropdown
+
+If a Place ID is not available, the backend falls back to geocoding the typed address.
+
+How to Run the Project Locally (If Deployed Version Fails)
+Prerequisites
+
+Java JDK installed
+
+Maven installed
+
+Node.js installed
+
+Apache Tomcat installed
+
+Google Maps API key with required APIs enabled
+
+API key set as an environment variable:
+
+GOOGLE_MAPS_API_KEY=your_api_key_here
+
+Backend: Clean Redeploy (Required)
+
+This process ensures Tomcat does not use cached or stale files.
+
+1) Stop Tomcat
+
+Navigate to the Tomcat bin directory and stop the server.
+
+Windows:
+
+shutdown.bat
+
+
+Mac / Linux:
+
+./shutdown.sh
+
+2) Delete Deployed App and Caches
+
+Remove the deployed backend folder, cached files, and WAR file from Tomcat.
+
+Delete:
+
+webapps/backend
+
+webapps/backend.war
+
+work/Catalina/localhost/backend
+
+(This step is important to avoid old code being reused.)
+
+3) Build the Backend WAR
+
+From the backend project directory:
+
+mvn clean package
+
+
+This will generate a new WAR file inside the target folder.
+
+4) Copy WAR to Tomcat
+
+Copy the generated WAR file into Tomcat’s webapps directory.
+
+Example:
+
+copy target/backend.war TOMCAT_HOME/webapps/backend.war
+
+
+Tomcat will automatically deploy it on startup.
+
+5) Start Tomcat
+
+From the Tomcat bin directory:
+
+Windows:
+
+startup.bat
+
+
+Mac / Linux:
+
+./startup.sh
+
+
+Once started, the backend should be available locally.
 
 Frontend Setup
 
-To run the frontend, Node.js must be installed. After installing the project dependencies, the frontend development server can be started. Once running, the application is accessible in a browser using the local development URL provided by Vite.
+From the frontend directory:
 
-Notes
+Install dependencies:
 
-The frontend no longer uses mock address data and instead relies entirely on the backend for autocomplete suggestions. All Google Places API requests are handled server-side to improve security. The system has been tested end-to-end to ensure that typing an address produces real suggestions and that the frontend and backend communicate correctly.
+npm install
+
+
+Start the development server:
+
+npm run dev
+
+
+Vite will display a local URL in the terminal. Open it in a browser to access the application.
