@@ -16,25 +16,6 @@ import java.nio.charset.StandardCharsets;
 
 import javax.servlet.annotation.WebFilter;
 
-@WebFilter("/*")
-public class CORSFilter implements Filter {
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-            throws IOException, ServletException {
-        HttpServletResponse response = (HttpServletResponse) res;
-        response.setHeader("Access-Control-Allow-Origin", "https://cs-370-final-project-esdtkpveo-hanzheng912s-projects.vercel.app");
-        response.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-        response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-        if (req instanceof HttpServletRequest && "OPTIONS".equalsIgnoreCase(((HttpServletRequest) req).getMethod())) {
-            response.setStatus(HttpServletResponse.SC_OK);
-            return;
-        }
-
-        chain.doFilter(req, res);
-    }
-    public void init(FilterConfig filterConfig) {}
-    public void destroy() {}
-}
 
 //@WebServlet("/api/places/suggest")
 public class PlaceSuggestionServlet extends HttpServlet {

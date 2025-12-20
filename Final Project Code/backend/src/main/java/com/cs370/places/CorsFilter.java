@@ -7,29 +7,22 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @WebFilter("/*")
-public class CorsFilter implements Filter {
-  @Override
-  public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-      throws IOException, ServletException {
+public class CORSFilter implements Filter {
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+            throws IOException, ServletException {
+        HttpServletResponse response = (HttpServletResponse) res;
+        response.setHeader("Access-Control-Allow-Origin", "https://cs-370-final-project-esdtkpveo-hanzheng912s-projects.vercel.app");
+        response.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-    HttpServletRequest request = (HttpServletRequest) req;
-    HttpServletResponse response = (HttpServletResponse) res;
+        if (req instanceof HttpServletRequest && "OPTIONS".equalsIgnoreCase(((HttpServletRequest) req).getMethod())) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            return;
+        }
 
-    String origin = request.getHeader("Origin");
-    if ("http://localhost:5173".equals(origin) || "http://localhost:5174".equals(origin)) {
-      response.setHeader("Access-Control-Allow-Origin", origin);
+        chain.doFilter(req, res);
     }
-
-    response.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-    response.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
-    response.setHeader("Access-Control-Allow-Credentials", "true");
-
-    if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-      response.setStatus(HttpServletResponse.SC_OK);
-      return;
-    }
-
-    chain.doFilter(req, res);
-  }
+    public void init(FilterConfig filterConfig) {}
+    public void destroy() {}
 }
 
