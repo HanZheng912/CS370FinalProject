@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.VITE_BACKEND_BASE_URL || '' // e.g. http://localhost:8080/backend
+// Always use production backend (can be overridden with VITE_BACKEND_BASE_URL env var)
+const API_BASE = import.meta.env.VITE_BACKEND_BASE_URL || 'https://cs370finalproject-2.onrender.com'
 
 function apiUrl(path) {
   return `${API_BASE}${path}`
