@@ -7,7 +7,7 @@ echo "   Backend Startup Script"
 echo "----------------------------------------"
 
 # 1) Google Maps API Key
-export GOOGLE_MAPS_API_KEY="YOUR_NEW_API_KEY_HERE"
+$env:GOOGLE_MAPS_API_KEY="AIzaSyAqkUqit2A3m4LAS2Y9AaHQk4j2piCbYws"
 echo "Google Maps API Key set."
 
 echo "----------------------------------------"
