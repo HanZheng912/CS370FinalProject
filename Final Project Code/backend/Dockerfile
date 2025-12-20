@@ -1,4 +1,4 @@
----- Stage 1: Build WAR with Maven ----
+
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 
@@ -9,7 +9,7 @@ COPY src ./src
 Build WAR
 RUN mvn -q clean package -DskipTests
 
----- Stage 2: Run WAR on Tomcat ----
+
 FROM tomcat:9.0-jdk17-temurin
 
 Remove default Tomcat apps
