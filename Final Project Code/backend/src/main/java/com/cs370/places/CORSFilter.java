@@ -11,7 +11,7 @@ public class CORSFilter implements Filter {
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
         HttpServletResponse response = (HttpServletResponse) res;
-        response.setHeader("Access-Control-Allow-Origin", "https://cs-370-final-project-esdtkpveo-hanzheng912s-projects.vercel.app");
+        response.setHeader("Access-Control-Allow-Origin", "https://cs-370-final-project.vercel.app");
         response.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
         response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
