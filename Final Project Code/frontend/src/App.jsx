@@ -12,37 +12,25 @@ function App() {
   const [resetFormFields, setResetFormFields] = useState(null)
 
   const handleCalculate = async (formValues) => {
-    // Prevent double submit - if already loading, do nothing
-    if (status === 'loading') {
-      return
-    }
+  if (status === 'loading') return
 
-    setStatus('loading')
-    setErrorMessage(null)
+  setStatus('loading')
+  setErrorMessage(null)
 
-    try {
-      // Build payload for estimateDeparture
-      const payload = {
-        fromAddressText: formValues.fromAddress,
-        selectedPlaceId: formValues.selectedPlaceId || null,
-        airport: formValues.airport,
-        arrivalDate: formValues.arrivalDate, // Already converted to MM-DD-YYYY in TripForm
-        arrivalTime: formValues.arrivalTime,
-        transportMode: formValues.transportMode === 'drive' ? 'self' : 'cab',
-        cabBufferMinutes: Number(formValues.cabBuffer) || 0,
-        weatherCondition: formValues.weatherCondition // Already mapped in TripForm
-      }
+  try {
+    // TripForm already sends the exact payload estimateDeparture expects
+    const estimateResult = await estimateDeparture(formValues)
 
-      const estimateResult = await estimateDeparture(payload)
-      setResult(estimateResult)
-      setStatus('success')
-      setIsResultsOpen(true) // Open modal on success
-    } catch (error) {
-      setStatus('error')
-      setErrorMessage(error.message || 'An error occurred while calculating departure time.')
-      setResult(null) // Clear result on error
-    }
+    setResult(estimateResult)
+    setStatus('success')
+    setIsResultsOpen(true)
+  } catch (error) {
+    setStatus('error')
+    setErrorMessage(error.message || 'An error occurred while calculating departure time.')
+    setResult(null)
   }
+}
+
 
   const handleReset = () => {
     setStatus('idle')
