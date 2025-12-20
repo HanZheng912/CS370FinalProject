@@ -33,6 +33,7 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
 
   const addressInputRef = useRef(null)
   const suggestionsRef = useRef(null)
+  const isSelectingSuggestionRef = useRef(false)
 
   // ✅ Reset form fields except fromAddress and airport when onResetFields changes
   useEffect(() => {
@@ -56,8 +57,11 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
 
   // ✅ Address suggestions fetch (debounced)
   useEffect(() => {
-    // clear selected place if user edits input
-    setSelectedPlace(null)
+    // clear selected place if user edits input (but not when selecting from dropdown)
+    if (!isSelectingSuggestionRef.current) {
+      setSelectedPlace(null)
+    }
+    isSelectingSuggestionRef.current = false
 
     const q = fromAddress.trim()
     if (q.length < 3) {
@@ -171,6 +175,7 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
   }
 
   const handleSuggestionSelect = (suggestion) => {
+    isSelectingSuggestionRef.current = true
     setSelectedPlace(suggestion)
     setFromAddress(suggestion.label)
     setIsSuggestionsOpen(false)
@@ -269,7 +274,14 @@ function TripForm({ onCalculate, isLoading = false, onResetFields }) {
                   <button
                     key={suggestion.id ?? `${suggestion.label}-${index}`}
                     type="button"
-                    onClick={() => handleSuggestionSelect(suggestion)}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      handleSuggestionSelect(suggestion)
+                    }}
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                    }}
                     className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-blue-100 focus:bg-blue-100 focus:outline-none transition-colors"
                   >
                     {suggestion.label}
