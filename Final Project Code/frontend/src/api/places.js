@@ -12,7 +12,7 @@ export async function getPlaceSuggestions(query) {
 
   const queryTrimmed = query.trim()
 
- const res = await fetch(`/api/places/suggest?q=${encodeURIComponent(queryTrimmed)}`, {
+ const res = await fetch(`https://cs370finalproject-2.onrender.com/api/places/suggest?q=${encodeURIComponent(query)}`, {
   headers: { Accept: 'application/json' }
 })
 
